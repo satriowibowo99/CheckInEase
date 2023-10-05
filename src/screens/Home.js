@@ -235,7 +235,9 @@ export default function Home({navigation, route}) {
       </ScrollView>
 
       <View style={styles.qrCodeScanContainer}>
-        <TouchableNativeFeedback useForeground>
+        <TouchableNativeFeedback
+          useForeground
+          onPress={() => navigation.navigate('Camera')}>
           <View style={styles.qrCodeScan}>
             <Icon name={'qrcode-scan'} color={'white'} size={30} />
           </View>

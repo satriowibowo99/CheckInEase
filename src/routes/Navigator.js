@@ -10,11 +10,11 @@ export default function Navigator() {
   return (
     <NavigationContainer onReady={() => RNBootSplash.hide({fade: true})}>
       <Stack.Navigator screenOptions={{headerShown: false}}>
-        <Stack.Screen component={Camera} name="Camera" />
         <Stack.Screen component={SplashScreen} name="SplashScreen" />
         <Stack.Screen component={SignIn} name="SignIn" />
         <Stack.Screen component={SingUp} name="SignUp" />
         <Stack.Screen component={Home} name="Home" />
+        <Stack.Screen component={Camera} name="Camera" />
       </Stack.Navigator>
     </NavigationContainer>
   );
