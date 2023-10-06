@@ -7,15 +7,16 @@ import {
   TouchableOpacity,
   Linking,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   Camera,
   useCameraDevice,
   useCodeScanner,
 } from 'react-native-vision-camera';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useFocusEffect} from '@react-navigation/native';
 
-export default function ScanCamera() {
+export default function ScanCamera({navigation}) {
   const device = useCameraDevice('back');
 
   const [conditionStatus, setconditionStatus] = useState(null);
@@ -32,9 +33,11 @@ export default function ScanCamera() {
     },
   });
 
-  useEffect(() => {
-    checkPermission();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      checkPermission();
+    }, []),
+  );
 
   if (device == null)
     return (
@@ -47,8 +50,10 @@ export default function ScanCamera() {
         device={device}
         isActive={true}
         codeScanner={codeScanner}
+        fps={30}
       />
       <Modal
+        onRequestClose={() => navigation.goBack()}
         animationType="fade"
         visible={conditionStatus == 'denied' || conditionStatus == null}
         transparent={true}>
