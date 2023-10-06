@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Linking,
+  ToastAndroid,
 } from 'react-native';
 import React, {useEffect, useState, useCallback} from 'react';
 import {
@@ -15,9 +16,17 @@ import {
 } from 'react-native-vision-camera';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useFocusEffect} from '@react-navigation/native';
+import axios from 'axios';
 
-export default function ScanCamera({navigation}) {
+export default function ScanCamera({navigation, route}) {
+  console.log(route);
+  const token = route.params.data.token;
+  const name = route.params.data.name.toUpperCase();
+
   const device = useCameraDevice('back');
+
+  const [cameraStatus, setCameraStatus] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [conditionStatus, setconditionStatus] = useState(null);
   const checkPermission = async () => {
@@ -29,15 +38,121 @@ export default function ScanCamera({navigation}) {
   const codeScanner = useCodeScanner({
     codeTypes: ['qr', 'ean-13'],
     onCodeScanned: codes => {
-      console.log(`Scanned ${codes.length} codes!`);
+      setLoading(true);
+      if (codes[0].value == 'saya-hadir') {
+        sayaHadir(codes);
+      } else if (codes[0].value == 'saya-pulang') {
+        sayaPulang(codes);
+      } else {
+        // setLoading(true);
+        setTimeout(() => setLoading(false), 3000);
+        console.log('qr-code-tidak-dikenali');
+      }
+      // console.log(codes[0].value);
     },
   });
+
+  async function sayaHadir(codes) {
+    try {
+      const response = await axios.post(
+        'https://dev.pondokdigital.pondokqu.id/api/presence-in',
+        {
+          status: 'Hadir',
+          latitude: Math.random(),
+          longitude: Math.random(),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (
+        response.data.message == `TERIMA KASIH ${name} SUDAH PRESENSI HARI INI`
+      ) {
+        navigation.goBack();
+        ToastAndroid.show(response.data.message, ToastAndroid.LONG);
+      } else if (
+        response.data.message ==
+        `${name} SUDAH PRESENSI HARI INI, CUKUP SEKALI AJA PRESENSINYA`
+      ) {
+        navigation.goBack();
+        ToastAndroid.show(response.data.message, ToastAndroid.LONG);
+      }
+      console.log(response.data);
+    } catch (error) {}
+    // console.log(codes[0].value);
+  }
+
+  async function sayaPulang(codes) {
+    try {
+      const response = await axios.post(
+        'https://dev.pondokdigital.pondokqu.id/api/presence-out',
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      console.log(response.data);
+      if (
+        response.data.message ==
+        `HAI ${name} ANDA BELUM PRESENSI MASUK, SILAHKAN PRESENSI MASUK TERLEBIH DAHULU`
+      ) {
+        setLoading(false);
+        ToastAndroid.show(response.data.message, ToastAndroid.LONG);
+      } else if (
+        response.data.message ==
+        `TERIMA KASIH ${name} SUDAH PRESENSI PULANG HARI INI`
+      ) {
+        navigation.goBack();
+        ToastAndroid.show(response.data.message, ToastAndroid.LONG);
+      } else if (
+        response.data.message ==
+        `${name} SUDAH PRESENSI PULANG HARI INI, CUKUP SEKALI AJA PRESENSINYA`
+      ) {
+        navigation.goBack();
+        ToastAndroid.show(response.data.message, ToastAndroid.LONG);
+      }
+    } catch (error) {}
+    // console.log(codes[0].value);
+  }
 
   useFocusEffect(
     useCallback(() => {
       checkPermission();
     }, []),
   );
+
+  if (loading) {
+    return (
+      <View
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#00000066',
+        }}>
+        <View
+          style={{
+            width: 100,
+            height: 100,
+            backgroundColor: 'white',
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 5,
+            borderRadius: 10,
+          }}>
+          <ActivityIndicator color={'black'} size={30} />
+        </View>
+      </View>
+    );
+  }
 
   if (device == null)
     return (
@@ -48,10 +163,11 @@ export default function ScanCamera({navigation}) {
       <Camera
         style={StyleSheet.absoluteFill}
         device={device}
-        isActive={true}
+        isActive={cameraStatus}
         codeScanner={codeScanner}
         fps={30}
       />
+
       <Modal
         onRequestClose={() => navigation.goBack()}
         animationType="fade"

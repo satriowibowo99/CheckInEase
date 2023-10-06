@@ -35,7 +35,7 @@ export default function SignIn({navigation}) {
       EncryptedStorage.setItem('credential', JSON.stringify({email, password}));
       // console.log(response.data.token);
       setLoading(false);
-      navigation.navigate('Home', {token: response.data.token});
+      navigation.replace('Home', {token: response.data.token});
     } catch (error) {
       setLoading(false);
       // console.log(error.response.data);

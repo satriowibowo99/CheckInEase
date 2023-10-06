@@ -7,15 +7,19 @@ import {
   Modal,
   ScrollView,
   Alert,
+  RefreshControl,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Background} from '../components';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
+import {useFocusEffect} from '@react-navigation/native';
 
 export default function Home({navigation, route}) {
   const token = route.params.token;
+
+  const [loading, setLoading] = useState(true);
 
   const [isModalVisible, setModalVisible] = useState(false);
   const openModal = () => {
@@ -69,6 +73,7 @@ export default function Home({navigation, route}) {
 
   const [dataValue, setDataValue] = useState([]);
   async function getData() {
+    setLoading(true);
     try {
       const response = await axios.get(
         'https://dev.pondokdigital.pondokqu.id/api/get-data-user-in-year',
@@ -79,9 +84,11 @@ export default function Home({navigation, route}) {
           },
         },
       );
+      setLoading(false);
       setDataValue(response.data);
       // console.log(response.data);
     } catch (error) {
+      setLoading(false);
       console.log(error.data);
     }
   }
@@ -104,15 +111,12 @@ export default function Home({navigation, route}) {
       // console.log(responseName.data.user.name);
     } catch (error) {}
   }
-
-  function cameraScreen() {
-    const cameraRef = useRef(null);
-  }
-
-  useEffect(() => {
-    getData();
-    getName();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getData();
+      getName();
+    }, []),
+  );
 
   return (
     <View style={styles.container}>
@@ -184,7 +188,7 @@ export default function Home({navigation, route}) {
         </View>
       </View>
 
-      <ScrollView>
+      <ScrollView refreshControl={<RefreshControl refreshing={loading} />}>
         <View
           style={{
             flexDirection: 'row',
@@ -237,7 +241,9 @@ export default function Home({navigation, route}) {
       <View style={styles.qrCodeScanContainer}>
         <TouchableNativeFeedback
           useForeground
-          onPress={() => navigation.navigate('Camera')}>
+          onPress={() =>
+            navigation.navigate('Camera', {data: {token: token, name: name}})
+          }>
           <View style={styles.qrCodeScan}>
             <Icon name={'qrcode-scan'} color={'white'} size={30} />
           </View>

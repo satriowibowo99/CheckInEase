@@ -19,10 +19,10 @@ export default function SplashScreen({navigation}) {
             },
           },
         );
-        navigation.navigate('Home', {token: response.data.token});
+        navigation.replace('Home', {token: response.data.token});
         // console.log(response.data.token);
       } else {
-        navigation.navigate('SignIn');
+        navigation.replace('SignIn');
       }
       // console.log(credential);
     } catch (error) {
